@@ -39,7 +39,7 @@ if [[ -n $maintainer ]]; then
 fi
 
 # Get number of sources
-n=$(sed -n '/^source/,/)/p' PKGBUILD | wc -l)
+n=$(( $(sed -n '/^source/,/)/p' PKGBUILD | wc -l) - 1 ))
 
 # Don't build language packs
 sed -ni '/^_package_i18n()/,/^sha512sums/{/^sha512sums/!d};
