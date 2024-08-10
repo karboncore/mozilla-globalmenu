@@ -14,6 +14,28 @@ wget -q -N https://raw.githubusercontent.com/archlinux/aur/1ab4aad0eaaa2f5313aee
 
 # Revise unity-menubar.patch to v125
 patch -s -p1 <<'EOF'
+--- firefox/unity-menubar.patch        2024-08-09 21:36:17.726612101 -0400
++++ firefox2/unity-menubar.patch     2024-08-09 21:36:31.643601143 -0400
+@@ -1,19 +1,3 @@
+---- a/browser/base/content/browser-menubar.inc
+-+++ b/browser/base/content/browser-menubar.inc
+-@@ -7,7 +7,12 @@
+- # On macOS, we don't track whether activation of the native menubar happened
+- # with the keyboard.
+- #ifndef XP_MACOSX
+--                onpopupshowing="if (event.target.parentNode.parentNode == this)
+-+                onpopupshowing="if (event.target.parentNode.parentNode == this &amp;&amp;
+-+#ifdef MOZ_WIDGET_GTK
+-+                                    document.documentElement.getAttribute('shellshowingmenubar') != 'true')
+-+#else
+-+                                    true)
+-+#endif
+-                                   this.setAttribute('openedwithkey',
+-                                                     event.target.parentNode.openedWithKey);"
+- #endif
+ --- a/browser/base/content/browser.js
+ +++ b/browser/base/content/browser.js
+ @@ -6466,11 +6466,18 @@ function onViewToolbarsPopupShowing(aEve
 --- firefox/unity-menubar.patch        2023-11-06 23:21:47.000000000 -0500
 +++ firefox2/unity-menubar.patch     2024-05-20 12:28:21.251811335 -0400
 @@ -1436,7 +1436,7 @@
@@ -96,19 +118,6 @@ patch -s -p1 <<'EOF'
  @@ -0,0 +1,31 @@
 EOF
 
-# Generate fix_csd_window_buttons.patch
-cat << EOF > fix_csd_window_buttons.patch
---- a/browser/base/content/browser.css
-+++ b/browser/base/content/browser.css
-@@ -334,5 +334,5 @@ toolbar[customizing] #whats-new-menu-button {
- %ifdef MENUBAR_CAN_AUTOHIDE
- #toolbar-menubar[autohide=true]:not([inactive]) + #TabsToolbar > .titlebar-buttonbox-container {
--  visibility: hidden;
-+  visibility: visible;
- }
- %endif
-EOF
-
 # Save original PKGBUILD
 cp PKGBUILD PKGBUILD.orig
 
@@ -124,13 +133,12 @@ fi
 patch -s -p1 <<'EOF'
 --- firefox/PKGBUILD	2023-08-30 02:15:49.000000000 -0400
 +++ firefox2/PKGBUILD	2023-09-09 10:04:52.241855178 -0400
-@@ -98,6 +98,10 @@
+@@ -98,6 +98,9 @@
    mkdir mozbuild
    cd firefox-$pkgver
  
 +  # Appmenu patches
 +  patch -Np1 -i ../unity-menubar.patch
-+  patch -Np1 -i ../fix_csd_window_buttons.patch
 +
    echo -n "$_google_api_key" >google-api-key
    echo -n "$_mozilla_api_key" >mozilla-api-key
@@ -152,12 +160,9 @@ fi
 sed -i '/# vim/d' PKGBUILD
 
 cat <<'EOF' >> PKGBUILD
-source+=('unity-menubar.patch'
-         'fix_csd_window_buttons.patch')
-sha256sums+=('db34163af3d0a1fb8aec0b9fdcea18b6a8c2c7f352fa6c6fba2673c38fff2e47'
-             '72b897d8a07e7cf3ddbe04a7e0a5bb577981d367c12f934907898fbf6ddf03e4')
-b2sums+=('0e8e615dd9e0c2fa0ea1ddfb4256095a3164da90a6499e332516e5efa1563cf3a267376cdbc4b416b626b4cbbaa34cafc02610a8651782c0cf4d276c7dff9b7c'
-         'bafaf2663380ab7ba1c4a03c49debc965f4197a35058a5066be421eae172dd9cc5ba7ae7a26a9fd0c9f1d4c9a7670f425261071e01f71e7641531568754baf74')
+source+=('unity-menubar.patch')
+sha256sums+=('668b265edafa5cf50e2ef7be743b1db66a3173a850c738631905935ba3c82370')
+b2sums+=('3924adb68fe38df9010c47634485bbba79971e0cc206f2c1476eb72a5540cacfc60017290eb6ef6789585709beedda341f7d19e30140e9db7bd9c8b8187663fe')
 EOF
 
 # Default to -globalmenu suffix
