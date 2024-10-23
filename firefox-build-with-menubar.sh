@@ -5,18 +5,36 @@
 # builds the modified firefox.
 ########################################################################################################################
 
-# Download current PKGBUILD from Arch
-wget -q -O- https://gitlab.archlinux.org/archlinux/packaging/packages/firefox/-/archive/main/firefox-main.tar.gz | \
+# Check for existing files
+if [[ -f PKGBUILD.orig && -f unity-menubar.orig ]]; then
+  printf "Existing files found. Re-download? [y/N] "
+  read -r ans
+else
+  ans=yes
+fi
+
+if [[ "$ans" == y || "$ans" == yes ]]; then
+  # Download current PKGBUILD from Arch
+  wget -q -O- https://gitlab.archlinux.org/archlinux/packaging/packages/firefox/-/archive/main/firefox-main.tar.gz | \
   tar -xzf - --strip-components=1
 
-# Download menubar patch from firefox-appmenu-112.0-1
-wget -q -N https://raw.githubusercontent.com/archlinux/aur/1ab4aad0eaaa2f5313aee62606420b0b92c3d238/unity-menubar.patch
+  # Download menubar patch from firefox-appmenu-112.0-1
+  wget -q -N https://raw.githubusercontent.com/archlinux/aur/1ab4aad0eaaa2f5313aee62606420b0b92c3d238/unity-menubar.patch
 
-# Revise unity-menubar.patch to v125
-patch -s -p1 <<'EOF'
---- firefox/unity-menubar.patch        2024-08-09 21:36:17.726612101 -0400
-+++ firefox2/unity-menubar.patch     2024-08-09 21:36:31.643601143 -0400
-@@ -1,19 +1,3 @@
+  # Save original PKGBUILD and menubar patch
+  cp PKGBUILD PKGBUILD.orig
+  cp unity-menubar.patch unity-menubar.orig
+else
+  # Reuse existing files
+  cp PKGBUILD.orig PKGBUILD
+  cp unity-menubar.orig unity-menubar.patch
+fi
+
+# Revise unity-menubar.patch to v131
+patch --no-backup-if-mismatch -s -p1 <<'EOF'
+--- firefox/unity-menubar.patch  2024-10-18 07:24:17.830307950 -0400
++++ firefox2/unity-menubar.patch 2024-10-18 07:34:35.611460127 -0400
+@@ -1,40 +1,3 @@
 ---- a/browser/base/content/browser-menubar.inc
 -+++ b/browser/base/content/browser-menubar.inc
 -@@ -7,7 +7,12 @@
@@ -33,11 +51,30 @@ patch -s -p1 <<'EOF'
 -                                   this.setAttribute('openedwithkey',
 -                                                     event.target.parentNode.openedWithKey);"
 - #endif
- --- a/browser/base/content/browser.js
- +++ b/browser/base/content/browser.js
- @@ -6466,11 +6466,18 @@ function onViewToolbarsPopupShowing(aEve
---- firefox/unity-menubar.patch        2023-11-06 23:21:47.000000000 -0500
-+++ firefox2/unity-menubar.patch     2024-05-20 12:28:21.251811335 -0400
+---- a/browser/base/content/browser.js
+-+++ b/browser/base/content/browser.js
+-@@ -6466,11 +6466,18 @@ function onViewToolbarsPopupShowing(aEve
+-   MozXULElement.insertFTLIfNeeded("browser/toolbarContextMenu.ftl");
+-   let firstMenuItem = aInsertPoint || popup.firstElementChild;
+-   let toolbarNodes = gNavToolbox.querySelectorAll("toolbar");
+-+
+-+  let shellShowingMenubar = document.documentElement.getAttribute("shellshowingmenubar") == "true";
+-+
+-   for (let toolbar of toolbarNodes) {
+-     if (!toolbar.hasAttribute("toolbarname")) {
+-       continue;
+-     }
+- 
+-+    if (shellShowingMenubar && toolbar.id == "toolbar-menubar") {
+-+      continue;
+-+    }
+-+
+-     if (toolbar.id == "PersonalToolbar") {
+-       let menu = BookmarkingUI.buildBookmarksToolbarSubmenu(toolbar);
+-       popup.insertBefore(menu, firstMenuItem);
+ --- a/browser/components/places/content/places.xhtml
+ +++ b/browser/components/places/content/places.xhtml
+ @@ -165,6 +165,7 @@
 @@ -1436,7 +1436,7 @@
  +
  +    mEventListener = new DocEventListener(this);
@@ -118,9 +155,6 @@ patch -s -p1 <<'EOF'
  @@ -0,0 +1,31 @@
 EOF
 
-# Save original PKGBUILD
-cp PKGBUILD PKGBUILD.orig
-
 # Revise maintainer string
 printf "Enter maintainer string: "
 read -r maintainer
@@ -129,8 +163,13 @@ if [[ -n $maintainer ]]; then
           1i # Maintainer: $maintainer" PKGBUILD
 fi
 
+# Pull sources directly from Arch
+commit=$(git ls-remote https://gitlab.archlinux.org/archlinux/packaging/packages/firefox.git HEAD|awk '{print $1}')
+sed --in-place '/source=/i commit=https://gitlab.archlinux.org/archlinux/packaging/packages/firefox/-/raw/'$commit PKGBUILD
+sed --in-place -nE '/source=/,/\)/{/ +https/!{s@ +@  $commit/@g}};p' PKGBUILD
+
 # Add menubar patches
-patch -s -p1 <<'EOF'
+patch --no-backup-if-mismatch -s -p1 <<'EOF'
 --- firefox/PKGBUILD	2023-08-30 02:15:49.000000000 -0400
 +++ firefox2/PKGBUILD	2023-09-09 10:04:52.241855178 -0400
 @@ -98,6 +98,9 @@
@@ -161,18 +200,17 @@ sed -i '/# vim/d' PKGBUILD
 
 cat <<'EOF' >> PKGBUILD
 source+=('unity-menubar.patch')
-sha256sums+=('668b265edafa5cf50e2ef7be743b1db66a3173a850c738631905935ba3c82370')
-b2sums+=('3924adb68fe38df9010c47634485bbba79971e0cc206f2c1476eb72a5540cacfc60017290eb6ef6789585709beedda341f7d19e30140e9db7bd9c8b8187663fe')
+sha256sums+=('95e69805c3f83aaf18ac18339289ba4661538c65b92ab93a352cb5bb76131c8a')
+b2sums+=('3576e8f301a59a8d3713984455d9219d4512659e198e132b4acff7ffab0cdb7a0ebbfea68212b68cf5579b841a8a81e1b1ff4755340414430d32c4b7f4481b56')
 EOF
 
 # Default to -globalmenu suffix
 printf "Append -globalmenu to package name? [Y/n] "
 read -r ans
 if [[ "$ans" != n && "$ans" != no ]]; then
-  sed -i '/pkgname=firefox/i pkgbase=firefox
-       s/pkgname=firefox/pkgname=$pkgbase-globalmenu/g;
-       s/$pkgname/$pkgbase/g;
-       s/${pkgname/${pkgbase/g' PKGBUILD
+  sed -i 's@pkgname=firefox@pkgname=firefox-globalmenu@g;
+          s@$pkgname@firefox@g;
+          s@${pkgname//-/_}@firefox@g' PKGBUILD
   cat <<'EOF' >> PKGBUILD
 provides=(firefox)
 conflicts=(firefox)
