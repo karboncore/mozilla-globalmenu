@@ -8,7 +8,7 @@
 # Current version and baseline commit
 commit=0809a5ea478b4fde738abb83c0fb30481659ea8e
 version=$(wget -q -O- https://archive.mozilla.org/pub/thunderbird/releases/|sed '/href/!d;s@.*releases/@@g;s@/.*@@g;/b/d'|sort -n|tail -1)
-sha512=$(wget -q -O- https://archive.mozilla.org/pub/thunderbird/releases/$version/SHA512SUMS|awk '/thunderbird-130.0.source.tar.xz/{print $1}')
+sha512=$(wget -q -O- https://archive.mozilla.org/pub/thunderbird/releases/$version/SHA512SUMS|awk '/thunderbird-'${version}'.source.tar.xz/{print $1}')
 
 # Check for existing files
 if [[ -f PKGBUILD.orig && -f unity-menubar.orig ]]; then
@@ -48,11 +48,11 @@ sed --in-place "s/pkgver=.*/pkgver=${version}/g;
                 /0034-bgo-936072-update-crates-for-rust-1.78-patch-from-bugs.freebsd.org-bug278989.patch/d;
                 s@_FORTIFY_SOURCE=3/_FORTIFY_SOURCE=2}@_FORTIFY_SOURCE=3/_FORTIFY_SOURCE=2} -fno-exceptions@g" PKGBUILD
 
-# Revise unity-menubar.patch to v129
+# Revise unity-menubar.patch to v131
 patch --no-backup-if-mismatch -s -p1 <<'EOF'
---- firefox/unity-menubar.patch        2024-08-09 21:36:17.726612101 -0400
-+++ firefox2/unity-menubar.patch     2024-08-09 21:36:31.643601143 -0400
-@@ -1,19 +1,3 @@
+--- firefox/unity-menubar.patch  2024-10-18 07:24:17.830307950 -0400
++++ firefox2/unity-menubar.patch 2024-10-18 07:34:35.611460127 -0400
+@@ -1,40 +1,3 @@
 ---- a/browser/base/content/browser-menubar.inc
 -+++ b/browser/base/content/browser-menubar.inc
 -@@ -7,7 +7,12 @@
@@ -69,11 +69,30 @@ patch --no-backup-if-mismatch -s -p1 <<'EOF'
 -                                   this.setAttribute('openedwithkey',
 -                                                     event.target.parentNode.openedWithKey);"
 - #endif
- --- a/browser/base/content/browser.js
- +++ b/browser/base/content/browser.js
- @@ -6466,11 +6466,18 @@ function onViewToolbarsPopupShowing(aEve
---- firefox/unity-menubar.patch        2023-11-06 23:21:47.000000000 -0500
-+++ firefox2/unity-menubar.patch     2024-05-20 12:28:21.251811335 -0400
+---- a/browser/base/content/browser.js
+-+++ b/browser/base/content/browser.js
+-@@ -6466,11 +6466,18 @@ function onViewToolbarsPopupShowing(aEve
+-   MozXULElement.insertFTLIfNeeded("browser/toolbarContextMenu.ftl");
+-   let firstMenuItem = aInsertPoint || popup.firstElementChild;
+-   let toolbarNodes = gNavToolbox.querySelectorAll("toolbar");
+-+
+-+  let shellShowingMenubar = document.documentElement.getAttribute("shellshowingmenubar") == "true";
+-+
+-   for (let toolbar of toolbarNodes) {
+-     if (!toolbar.hasAttribute("toolbarname")) {
+-       continue;
+-     }
+- 
+-+    if (shellShowingMenubar && toolbar.id == "toolbar-menubar") {
+-+      continue;
+-+    }
+-+
+-     if (toolbar.id == "PersonalToolbar") {
+-       let menu = BookmarkingUI.buildBookmarksToolbarSubmenu(toolbar);
+-       popup.insertBefore(menu, firstMenuItem);
+ --- a/browser/components/places/content/places.xhtml
+ +++ b/browser/components/places/content/places.xhtml
+ @@ -165,6 +165,7 @@
 @@ -1436,7 +1436,7 @@
  +
  +    mEventListener = new DocEventListener(this);
@@ -190,7 +209,7 @@ fi
 # Add menubar patches
 echo "
 source+=(unity-menubar.patch)
-sha512sums+=(4215758f26d0b6045c549908b659e5b1e353886b483d6b7ff4757d93d45e4704eba886f51162202a048bd557fbdfe6e08b81f3b5cb493199635a188a0508c840)" \
+sha512sums+=(78d2866e2d0703866c12debe7ef08042c62ebfc84edd1e5c168881a4f3d21d85766c24de30a1a5e07b604ba4d91e77bc0a402c444df60e4899a613d9f60a51d7)" \
 >> PKGBUILD
 
 # Build
