@@ -32,9 +32,9 @@ fi
 
 # Revise unity-menubar.patch to v131
 patch --no-backup-if-mismatch -s -p1 <<'EOF'
---- firefox/unity-menubar.patch  2024-10-18 07:24:17.830307950 -0400
-+++ firefox2/unity-menubar.patch 2024-10-18 07:34:35.611460127 -0400
-@@ -1,40 +1,3 @@
+--- a/unity-menubar.patch	2024-11-06 20:46:56.993394170 -0500
++++ b/unity-menubar.patch	2024-11-06 20:48:45.754699871 -0500
+@@ -1,50 +1,14 @@
 ---- a/browser/base/content/browser-menubar.inc
 -+++ b/browser/base/content/browser-menubar.inc
 -@@ -7,7 +7,12 @@
@@ -74,8 +74,23 @@ patch --no-backup-if-mismatch -s -p1 <<'EOF'
 -       popup.insertBefore(menu, firstMenuItem);
  --- a/browser/components/places/content/places.xhtml
  +++ b/browser/components/places/content/places.xhtml
- @@ -165,6 +165,7 @@
-@@ -1436,7 +1436,7 @@
+-@@ -165,6 +165,7 @@
++@@ -186,7 +186,7 @@
++               onpopupshowing="document.getElementById('placeContent').focus()"
++               data-l10n-id="places-organize-button-mac"
+  #else
+-       <menubar id="placesMenu">
++-      <menubar id="placesMenu">
+++      <menubar id="placesMenu" _moz-menubarkeeplocal="true">
+          <menu class="menu-iconic" data-l10n-id="places-organize-button"
+-+              _moz-menubarkeeplocal="true"
+  #endif
+                id="organizeButton">
+-           <menupopup id="organizeButtonPopup">
+ --- a/dom/xul/XULPopupElement.cpp
+ +++ b/dom/xul/XULPopupElement.cpp
+ @@ -208,6 +208,10 @@ void XULPopupElement::GetState(nsString&
+@@ -1436,7 +1400,7 @@
  +
  +    mEventListener = new DocEventListener(this);
  +
@@ -84,7 +99,7 @@ patch --no-backup-if-mismatch -s -p1 <<'EOF'
  +
  +    mAccessKey = Preferences::GetInt("ui.key.menuAccessKey");
  +    if (mAccessKey == dom::KeyboardEvent_Binding::DOM_VK_SHIFT) {
-@@ -3006,7 +3006,7 @@
+@@ -3006,7 +2970,7 @@
  +#endif /* __nsMenuItem_h__ */
  --- /dev/null
  +++ b/widget/gtk/nsMenuObject.cpp
@@ -93,7 +108,7 @@ patch --no-backup-if-mismatch -s -p1 <<'EOF'
  +/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
  +/* vim:expandtab:shiftwidth=4:tabstop=4:
  + */
-@@ -3243,7 +3243,8 @@
+@@ -3243,7 +3207,8 @@
  +                          nullptr, 0, loadGroup, this, nullptr, nullptr,
  +                          nsIRequest::LOAD_NORMAL, nullptr,
  +                          nsIContentPolicy::TYPE_IMAGE, EmptyString(),
@@ -103,7 +118,7 @@ patch --no-backup-if-mismatch -s -p1 <<'EOF'
  +    }
  +}
  +
-@@ -5121,33 +5122,21 @@
+@@ -5121,33 +5086,21 @@
   ]
   
   if defined('NS_PRINTING'):
@@ -141,7 +156,7 @@ patch --no-backup-if-mismatch -s -p1 <<'EOF'
  +
  +  nsCOMPtr<nsINativeMenuService> nms =
  +      do_GetService("@mozilla.org/widget/nativemenuservice;1");
-@@ -5156,9 +5145,9 @@
+@@ -5156,9 +5109,9 @@
  +  }
  +
  +  nms->CreateNativeMenuBar(aParent, aMenuBarElement);
@@ -200,8 +215,8 @@ sed -i '/# vim/d' PKGBUILD
 
 cat <<'EOF' >> PKGBUILD
 source+=('unity-menubar.patch')
-sha256sums+=('95e69805c3f83aaf18ac18339289ba4661538c65b92ab93a352cb5bb76131c8a')
-b2sums+=('3576e8f301a59a8d3713984455d9219d4512659e198e132b4acff7ffab0cdb7a0ebbfea68212b68cf5579b841a8a81e1b1ff4755340414430d32c4b7f4481b56')
+sha256sums+=('b8b123a1b3d189dd053f68fc5e6075339131b9927be01e67151acd39b751e71f')
+b2sums+=('d37c568e3f618d5ad94e26dcfa1c081fe6885f97267e0cf7e2f4fa16a744e16a13e11a5c5b6ae6d4fc6ac2725af1c0e3a5b1b8a430e25452f588737bf809f90e')
 EOF
 
 # Default to -globalmenu suffix
